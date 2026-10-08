@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced English Explorer: Discussion Text</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons (FontAwesome) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f9ff; /* Light sky blue */
+            overflow-x: hidden;
+        }
+        h1, h2, h3, .title-font {
+            font-family: 'Fredoka One', cursive;
+        }
+        
+        /* Gamified Buttons */
+        .btn-game {
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 0px rgba(0,0,0,0.2);
+        }
+        .btn-game:active {
+            transform: translateY(6px);
+            box-shadow: 0 0px 0px rgba(0,0,0,0.2);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #e0f2fe; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0284c7; }
+
+        .hidden { display: none !important; }
+        
+        /* Animations */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+
+        /* Checkbox styling for MCMA */
+        .custom-checkbox input:checked + div {
+            background-color: #3b82f6; border-color: #2563eb; color: white;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col relative">
+
+    <!-- Global Audio Toggle -->
+    <button id="btnToggleAudio" class="fixed top-4 right-4 z-50 bg-white p-3 rounded-full shadow-lg text-xl text-blue-600 btn-game border-2 border-blue-200">
+        <i class="fas fa-volume-up"></i>
+    </button>
+
+    <!-- App Container -->
+    <div id="appContainer" class="flex-grow flex flex-col w-full max-w-6xl mx-auto p-4 relative">
+        
+        <!-- SCREEN: LOGIN -->
+        <div id="screenLogin" class="flex-grow flex flex-col items-center justify-center animate-pop">
+            <div class="text-center mb-8 animate-float">
+                <i class="fas fa-rocket text-6xl text-yellow-400 mb-4 drop-shadow-md"></i>
+                <h1 class="text-5xl text-blue-600 drop-shadow-sm">English Explorer</h1>
+                <p class="text-xl text-slate-500 mt-2 font-semibold">Mastering Discussion Text</p>
+            </div>
+            
+            <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border-4 border-blue-100">
+                <div class="mb-5">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Your Name / Nama Kamu:</label>
+                    <input type="text" id="inputName" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none text-lg transition-colors" placeholder="Enter full name...">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Select Class / Pilih Kelas:</label>
+                    <select id="selectClass" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none text-lg bg-white">
+                        <option value="" disabled selected>-- Choose Class --</option>
+                        <option value="XII-8">Class XII-8 (Regular)</option>
+                        <option value="XII-12">Class XII-12 (Advanced)</option>
+                    </select>
+                </div>
+                <button onclick="appLogic.login()" class="w-full bg-blue-500 hover:bg-blue-600 text-white title-font text-2xl py-4 rounded-xl btn-game border-b-4 border-blue-700">
+                    START ADVENTURE <i class="fas fa-play ml-2"></i>
+                </button>
+            </div>
+            
+            <button onclick="appLogic.showScreen('screenDashboard')" class="mt-8 text-sm text-gray-400 hover:text-gray-600 underline">
+                Teacher Access (Dashboard)
+            </button>
+        </div>
+
+        <!-- SCREEN: MAIN MENU -->
+        <div id="screenMenu" class="hidden flex-grow flex flex-col animate-pop">
+            <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm mb-6 border-2 border-blue-50">
+                <div>
+                    <h2 class="text-2xl text-blue-600 title-font">Welcome, <span id="displayUserName">Student</span>!</h2>
+                    <p class="text-sm font-bold text-gray-500 bg-gray-100 inline-block px-3 py-1 rounded-full mt-1">Class: <span id="displayUserClass">XII-?</span></p>
+                </div>
+                <button onclick="appLogic.logout()" class="text-red-500 hover:bg-red-50 p-2 rounded-lg font-bold">
+                    <i class="fas fa-sign-out-alt"></i> Exit
+                </button>
+            </div>
+
+            <h3 class="text-3xl text-center mb-8 title-font text-slate-700">Choose Your Mission</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Menu Items -->
+                <div onclick="appLogic.showScreen('screenMaterial')" class="bg-gradient-to-br from-green-400 to-green-500 p-6 rounded-3xl shadow-lg cursor-pointer btn-game text-white flex flex-col items-center text-center">
+                    <div class="bg-white/20 p-4 rounded-full mb-4"><i class="fas fa-book-open text-5xl"></i></div>
+                    <h4 class="title-font text-2xl mb-2">1. The Library</h4>
+                    <p class="text-sm opacity-90 font-medium">Learn Discussion Text Material</p>
+                </div>
+
+                <div onclick="appLogic.showScreen('screenStory')" class="bg-gradient-to-br from-purple-400 to-purple-500 p-6 rounded-3xl shadow-lg cursor-pointer btn-game text-white flex flex-col items-center text-center">
+                    <div class="bg-white/20 p-4 rounded-full mb-4"><i class="fas fa-scroll text-5xl"></i></div>
+                    <h4 class="title-font text-2xl mb-2">2. Short Story</h4>
+                    <p class="text-sm opacity-90 font-medium">Read: The Smartphone Dilemma</p>
+                </div>
+
+                <div onclick="appLogic.showScreen('screenIceBreak')" class="bg-gradient-to-br from-pink-400 to-pink-500 p-6 rounded-3xl shadow-lg cursor-pointer btn-game text-white flex flex-col items-center text-center">
+                    <div class="bg-white/20 p-4 rounded-full mb-4"><i class="fas fa-gamepad text-5xl"></i></div>
+                    <h4 class="title-font text-2xl mb-2">3. Ice Breaking</h4>
+                    <p class="text-sm opacity-90 font-medium">Word Scramble Minigame</p>
+                </div>
+
+                <div onclick="appLogic.showScreen('screenSim')" class="bg-gradient-to-br from-orange-400 to-orange-500 p-6 rounded-3xl shadow-lg cursor-pointer btn-game text-white flex flex-col items-center text-center">
+                    <div class="bg-white/20 p-4 rounded-full mb-4"><i class="fas fa-puzzle-piece text-5xl"></i></div>
+                    <h4 class="title-font text-2xl mb-2">4. Simulation</h4>
+                    <p class="text-sm opacity-90 font-medium">Structure the Text</p>
+                </div>
+
+                <div onclick="appLogic.startQuiz()" class="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-3xl shadow-lg cursor-pointer btn-game text-white flex flex-col items-center text-center md:col-span-2 lg:col-span-2 border-4 border-yellow-300">
+                    <div class="bg-white/20 p-4 rounded-full mb-4"><i class="fas fa-trophy text-5xl text-yellow-300"></i></div>
+                    <h4 class="title-font text-3xl mb-2">5. Final Exam / Ulangan</h4>
+                    <p class="text-md opacity-90 font-medium">25 Interactive Challenges. Prove your skill!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: MATERIAL -->
+        <div id="screenMaterial" class="hidden flex-grow flex flex-col bg-white rounded-3xl shadow-lg border-2 border-green-100 overflow-hidden animate-pop">
+            <div class="bg-green-500 text-white p-6 flex justify-between items-center">
+                <h2 class="text-3xl title-font"><i class="fas fa-book-open mr-2"></i> Material: Discussion Text</h2>
+                <button onclick="appLogic.showScreen('screenMenu')" class="bg-white/20 hover:bg-white/40 px-4 py-2 rounded-xl font-bold transition">Back to Menu</button>
+            </div>
+            <div class="p-8 overflow-y-auto max-h-[70vh] text-lg leading-relaxed space-y-6">
+                
+                <div class="bg-green-50 p-6 rounded-2xl border-l-4 border-green-500">
+                    <h3 class="text-2xl font-bold text-green-700 mb-2">1. Definition & Social Function</h3>
+                    <p><strong>Discussion Text</strong> is a text which presents a problematic discourse. This problem will be discussed from different viewpoints (Pros and Cons).<br>
+                    <strong>Social Function:</strong> To present at least two points of view about an issue / to look at an issue from multiple perspectives before making a recommendation.</p>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-2xl border-l-4 border-blue-500">
+                    <h3 class="text-2xl font-bold text-blue-700 mb-2">2. Generic Structure</h3>
+                    <ul class="list-disc pl-6 space-y-2">
+                        <li><strong>Issue:</strong> Stating the issue which is to discussed.</li>
+                        <li><strong>Argument Pro (Supporting):</strong> Presenting the point in supporting the presented issue.</li>
+                        <li><strong>Argument Contra (Against):</strong> Presenting other points which disagree with the supporting point.</li>
+                        <li><strong>Conclusion / Recommendation:</strong> Stating the writer's recommendation of the discourse.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-purple-50 p-6 rounded-2xl border-l-4 border-purple-500">
+                    <h3 class="text-2xl font-bold text-purple-700 mb-2">3. Language Features</h3>
+                    <ul class="list-disc pl-6 space-y-2">
+                        <li>Using <strong>Simple Present Tense</strong> (e.g., The school provides...).</li>
+                        <li>Using <strong>Thinking Verbs</strong> (feel, hope, believe).</li>
+                        <li>Using <strong>Contrastive Conjunctions</strong> (however, on the other hand, but, in other side, nevertheless).</li>
+                        <li>Using <strong>Modalities</strong> (must, should, could, may).</li>
+                    </ul>
+                </div>
+
+                <div class="bg-yellow-50 p-6 rounded-2xl border border-yellow-200">
+                    <h3 class="text-2xl font-bold text-yellow-700 mb-2">Example: Homework - Good or Bad?</h3>
+                    <p class="mb-2"><strong>(Issue)</strong> There are a lot of discussions as to whether children should be given homework or not.</p>
+                    <p class="mb-2"><strong>(Pro)</strong> Some people claim that children do enough work in school already... Additionally, homework helps children learn independently.</p>
+                    <p class="mb-2"><strong>(Contra)</strong> On the other hand, parents and teachers argue that it is important to find out what children can do on their own without the help from the teacher.</p>
+                    <p><strong>(Conclusion)</strong> In conclusion, homework is good as long as it is not given too much.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: SHORT STORY -->
+        <div id="screenStory" class="hidden flex-grow flex flex-col bg-white rounded-3xl shadow-lg border-2 border-purple-100 overflow-hidden animate-pop">
+            <div class="bg-purple-500 text-white p-6 flex justify-between items-center">
+                <h2 class="text-3xl title-font"><i class="fas fa-scroll mr-2"></i> The Smartphone Dilemma</h2>
+                <button onclick="appLogic.showScreen('screenMenu')" class="bg-white/20 hover:bg-white/40 px-4 py-2 rounded-xl font-bold transition">Back to Menu</button>
+            </div>
+            <div class="p-8 overflow-y-auto max-h-[70vh] text-lg leading-relaxed">
+                <p class="mb-4">In modern education, bringing smartphones to school has become a hot debate among parents, teachers, and students. Everyone seems to have a strong opinion about it.</p>
+                <p class="mb-4"><strong>Those who support</strong> the idea believe that smartphones are powerful learning tools. "With internet access, students can find information instantly," says Mr. Budi, an IT teacher. Furthermore, in emergencies, a phone allows students to contact their parents quickly, ensuring their safety.</p>
+                <p class="mb-4"><strong>However, on the other hand,</strong> many educators strongly oppose this. They argue that smartphones are a massive distraction. Students often play games or check social media during lessons instead of paying attention. Additionally, there are concerns about cyberbullying happening right inside the classroom.</p>
+                <p class="mb-4 font-bold text-purple-700">Can you identify the Issue, Arguments For, Arguments Against, and think of your own Conclusion?</p>
+            </div>
+        </div>
+
+        <!-- SCREEN: ICE BREAKING -->
+        <div id="screenIceBreak" class="hidden flex-grow flex flex-col bg-white rounded-3xl shadow-lg border-2 border-pink-100 overflow-hidden animate-pop">
+            <div class="bg-pink-500 text-white p-6 flex justify-between items-center">
+                <h2 class="text-3xl title-font"><i class="fas fa-gamepad mr-2"></i> Word Scramble</h2>
+                <button onclick="appLogic.showScreen('screenMenu')" class="bg-white/20 hover:bg-white/40 px-4 py-2 rounded-xl font-bold transition">Back to Menu</button>
+            </div>
+            <div class="p-8 flex flex-col items-center justify-center min-h-[50vh]">
+                <p class="text-xl mb-6 text-center text-gray-600">Unscramble the word related to Discussion Text!</p>
+                <div id="scrambleWord" class="text-5xl font-bold tracking-widest text-pink-600 mb-8 title-font uppercase">E R U U C T R T S</div>
+                <input type="text" id="scrambleInput" class="px-6 py-4 rounded-2xl border-4 border-pink-200 text-2xl text-center focus:border-pink-500 outline-none w-full max-w-sm mb-6" placeholder="Type here...">
+                <button onclick="appLogic.checkScramble()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-xl btn-game border-b-4 border-pink-700 text-xl">Check Answer</button>
+                <p id="scrambleFeedback" class="mt-4 text-xl font-bold hidden"></p>
+            </div>
+        </div>
+
+        <!-- SCREEN: SIMULATION -->
+        <div id="screenSim" class="hidden flex-grow flex flex-col bg-white rounded-3xl shadow-lg border-2 border-orange-100 overflow-hidden animate-pop">
+            <div class="bg-orange-500 text-white p-6 flex justify-between items-center">
+                <h2 class="text-3xl title-font"><i class="fas fa-puzzle-piece mr-2"></i> Structure Simulation</h2>
+                <button onclick="appLogic.showScreen('screenMenu')" class="bg-white/20 hover:bg-white/40 px-4 py-2 rounded-xl font-bold transition">Back to Menu</button>
+            </div>
+            <div class="p-8">
+                <p class="text-lg mb-4 font-semibold text-gray-700">Select the correct generic structure label for the paragraph below:</p>
+                <div class="bg-gray-100 p-6 rounded-xl border border-gray-300 text-lg mb-6 italic">
+                    "On the other hand, critics argue that social media reduces face-to-face interaction and causes addiction among teenagers."
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="appLogic.checkSim(false)" class="bg-white border-2 border-orange-300 p-4 rounded-xl hover:bg-orange-50 text-xl font-bold text-orange-600 btn-game">Issue</button>
+                    <button onclick="appLogic.checkSim(false)" class="bg-white border-2 border-orange-300 p-4 rounded-xl hover:bg-orange-50 text-xl font-bold text-orange-600 btn-game">Argument PRO</button>
+                    <button onclick="appLogic.checkSim(true)" class="bg-white border-2 border-orange-300 p-4 rounded-xl hover:bg-orange-50 text-xl font-bold text-orange-600 btn-game">Argument CONTRA</button>
+                    <button onclick="appLogic.checkSim(false)" class="bg-white border-2 border-orange-300 p-4 rounded-xl hover:bg-orange-50 text-xl font-bold text-orange-600 btn-game">Conclusion</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: QUIZ / EXAM -->
+        <div id="screenQuiz" class="hidden flex-grow flex flex-col bg-white rounded-3xl shadow-lg border-2 border-red-100 overflow-hidden animate-pop relative">
+            
+            <!-- Quiz Header -->
+            <div class="bg-red-500 text-white p-4 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <button onclick="appLogic.quitQuiz()" class="bg-white/20 hover:bg-red-600 p-2 rounded-lg"><i class="fas fa-times"></i></button>
+                    <div class="font-bold text-xl">Question <span id="qCurrent">1</span> / 25</div>
+                </div>
+                <div class="flex gap-4">
+                     <button onclick="appLogic.readQuestionText()" class="bg-yellow-400 hover:bg-yellow-500 text-red-900 px-3 py-1 rounded-full font-bold text-sm shadow-md"><i class="fas fa-volume-up"></i> Listen</button>
+                     <div class="font-bold text-xl bg-red-600 px-4 py-1 rounded-full shadow-inner">Score: <span id="quizScore">0</span></div>
+                </div>
+            </div>
+
+            <!-- Quiz Progress Bar -->
+            <div class="w-full bg-red-200 h-2">
+                <div id="quizProgress" class="bg-green-400 h-2 transition-all duration-300" style="width: 0%"></div>
+            </div>
+
+            <!-- Quiz Content Area -->
+            <div class="p-6 md:p-10 overflow-y-auto flex-grow flex flex-col justify-center">
+                
+                <div class="mb-4 text-sm font-bold text-red-500 uppercase tracking-wide bg-red-50 inline-block px-3 py-1 rounded-full" id="qTypeBadge">Multiple Choice</div>
+                
+                <h3 id="qText" class="text-2xl md:text-3xl font-bold text-slate-800 mb-8 leading-tight"></h3>
+                
+                <!-- Options Container -->
+                <div id="qOptions" class="grid grid-cols-1 gap-4 w-full max-w-3xl">
+                    <!-- Injected via JS -->
+                </div>
+
+                <!-- Submit button for MCMA and Categories -->
+                <button id="btnSubmitMulti" onclick="appLogic.submitMultiAnswer()" class="hidden mt-8 bg-blue-500 text-white font-bold py-3 px-8 rounded-xl btn-game border-b-4 border-blue-700 text-xl w-fit">
+                    Submit Answer
+                </button>
+            </div>
+        </div>
+
+        <!-- CUSTOM MODAL (Feedback / Alert Replacement) -->
+        <div id="customModal" class="hidden fixed inset-0 z-[100] bg-slate-900/60 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl transform transition-transform scale-100 border-4 border-white text-center">
+                <div id="modalIcon" class="text-6xl mb-4"></div>
+                <h2 id="modalTitle" class="text-3xl title-font mb-2 text-slate-800">Title</h2>
+                <p id="modalMessage" class="text-lg text-slate-600 mb-6 leading-relaxed">Message</p>
+                <div id="modalExtra" class="bg-gray-50 p-4 rounded-xl mb-6 text-sm text-gray-700 text-left border border-gray-200 hidden"></div>
+                <button onclick="appLogic.closeModal()" id="modalBtn" class="bg-blue-500 text-white font-bold py-3 px-8 rounded-xl btn-game border-b-4 border-blue-700 w-full text-lg">Continue</button>
+            </div>
+        </div>
+
+        <!-- SCREEN: DASHBOARD -->
+        <div id="screenDashboard" class="hidden flex-grow flex flex-col bg-slate-50 rounded-3xl shadow-lg border-2 border-slate-200 overflow-hidden animate-pop">
+            <div class="bg-slate-800 text-white p-6 flex justify-between items-center">
+                <h2 class="text-3xl title-font"><i class="fas fa-chart-line mr-2"></i> Teacher Dashboard</h2>
+                <button onclick="appLogic.showScreen('screenLogin')" class="bg-white/20 hover:bg-white/40 px-4 py-2 rounded-xl font-bold transition">Back to Login</button>
+            </div>
+            
+            <div class="p-6 bg-white border-b flex flex-wrap gap-4 items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-700">Real-time Student Scores</h3>
+                    <p class="text-sm text-slate-500">Live sync from Cloud Database</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="appLogic.exportData('excel')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow flex items-center gap-2"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button onclick="appLogic.exportData('pdf')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow flex items-center gap-2"><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button onclick="appLogic.exportData('word')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow flex items-center gap-2"><i class="fas fa-file-word"></i> Word</button>
+                </div>
+            </div>
+
+            <div class="p-6 overflow-auto">
+                <table class="min-w-full bg-white rounded-lg overflow-hidden shadow">
+                    <thead class="bg-slate-200 text-slate-700">
+                        <tr>
+                            <th class="py-3 px-4 text-left">Name</th>
+                            <th class="py-3 px-4 text-left">Class</th>
+                            <th class="py-3 px-4 text-left">Score</th>
+                            <th class="py-3 px-4 text-left">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboardTableBody" class="divide-y divide-gray-200">
+                        <!-- Populated by Firebase -->
+                        <tr><td colspan="4" class="text-center py-8 text-gray-500">Loading data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables requirement
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'advanced-english-app';
+        let firebaseConfig;
+        try {
+            firebaseConfig = JSON.parse(__firebase_config);
+        } catch (e) {
+            // Fallback mock config for local testing if needed
+            firebaseConfig = { projectId: "demo-project" };
+            console.warn("Using mock firebase config");
+        }
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        let dbCollectionPath = "";
+        let firestoreUnsubscribe = null;
+
+        async function initFirebase() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                // MANDATORY RULE 1: Strict Paths
+                dbCollectionPath = `artifacts/${appId}/public/data/student_scores`;
+                
+                // Setup realtime listener for dashboard
+                setupDashboardListener();
+                
+                console.log("Firebase initialized and authenticated.");
+            } catch (error) {
+                console.error("Firebase Auth Error:", error);
+            }
+        }
+
+        // Export save function to global scope
+        window.saveScoreToCloud = async (name, studentClass, score) => {
+            if (!auth.currentUser) return; // MANDATORY RULE 3: Guard operation
+            try {
+                await addDoc(collection(db, dbCollectionPath), {
+                    name: name,
+                    class: studentClass,
+                    score: score,
+                    timestamp: serverTimestamp()
+                });
+            } catch (error) {
+                console.error("Error saving score:", error);
+            }
+        };
+
+        // Dashboard Realtime Logic
+        let dashboardData = []; // Store for exports
+        
+        function setupDashboardListener() {
+            if (!auth.currentUser) return;
+            
+            const q = collection(db, dbCollectionPath);
+            // MANDATORY RULE 2: No complex queries (no orderBy here, sort in JS)
+            firestoreUnsubscribe = onSnapshot(q, (snapshot) => {
+                dashboardData = [];
+                snapshot.forEach((doc) => {
+                    dashboardData.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Sort in memory (newest first based on JS parsing if timestamp is null initially)
+                dashboardData.sort((a, b) => {
+                    const timeA = a.timestamp ? a.timestamp.toMillis() : Date.now();
+                    const timeB = b.timestamp ? b.timestamp.toMillis() : Date.now();
+                    return timeB - timeA;
+                });
+                
+                renderDashboard(dashboardData);
+            }, (error) => {
+                console.error("Dashboard Snapshot Error:", error);
+            });
+        }
+        
+        // Export Dashboard Data reference to global for export buttons
+        window.getDashboardData = () => dashboardData;
+
+        initFirebase();
+    </script>
+
+    <script>
+        // --- 1. AUDIO MANAGER ---
+        const AudioSys = {
+            on: true,
+            ctx: null,
+            init() {
+                if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            },
+            play(type) {
+                if(!this.on) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                const now = this.ctx.currentTime;
+                
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'correct') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, now); // A4
+                    osc.frequency.setValueAtTime(554.37, now + 0.1); // C#5
+                    osc.frequency.setValueAtTime(659.25, now + 0.2); // E5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.5);
+                    osc.start(now); osc.stop(now + 0.5);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.4);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.4);
+                    osc.start(now); osc.stop(now + 0.4);
+                } else if (type === 'fanfare') {
+                    // Simple fanfare for exam complete
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => { // C E G C
+                        setTimeout(() => {
+                            if(!this.on) return;
+                            const o = this.ctx.createOscillator();
+                            const g = this.ctx.createGain();
+                            o.connect(g); g.connect(this.ctx.destination);
+                            o.type = 'square';
+                            o.frequency.value = freq;
+                            g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                            g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
+                            o.start(); o.stop(this.ctx.currentTime + 0.3);
+                        }, i * 150);
+                    });
+                }
+            },
+            speak(text) {
+                if(!this.on || !('speechSynthesis' in window)) return;
+                window.speechSynthesis.cancel(); // stop current
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9; // slightly slower for learning
+                window.speechSynthesis.speak(utterance);
+            },
+            toggle() {
+                this.on = !this.on;
+                const btn = document.getElementById('btnToggleAudio');
+                btn.innerHTML = this.on ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute text-gray-400"></i>';
+                if(this.on) this.play('click');
+                else window.speechSynthesis.cancel();
+            }
+        };
+
+        document.getElementById('btnToggleAudio').addEventListener('click', () => AudioSys.toggle());
+
+
+        // --- STREAMING_CHUNK:Defining 25 Quiz Questions... ---
+        // 1-10: MCQ, 11-17: MCMA, 18-25: Categorize
+        const quizData = [
+            // MCQ (1-10)
+            { type: 'mcq', q: "What is the primary social function of a Discussion Text?", 
+              opts: ["To entertain the reader", "To present at least two points of view about an issue", "To describe a specific object", "To explain how to make something"], ans: 1, 
+              exp: "Correct! A discussion text presents pros and cons.", err: "Remember, 'discussion' implies looking at multiple sides of an issue." },
+            { type: 'mcq', q: "Which of the following is NOT part of the generic structure of a Discussion Text?", 
+              opts: ["Issue", "Argument For", "Resolution", "Conclusion/Recommendation"], ans: 2, 
+              exp: "Spot on! Resolution belongs to Narrative text.", err: "Resolution is for stories (Narrative). Discussion texts end with a Conclusion." },
+            { type: 'mcq', q: "What tense is mostly used in Discussion Text?", 
+              opts: ["Simple Past Tense", "Simple Future Tense", "Simple Present Tense", "Present Perfect Tense"], ans: 2, 
+              exp: "Great! We use Present Tense because we are discussing current issues/facts.", err: "We are stating general facts and current opinions, so we use Simple Present." },
+            { type: 'mcq', q: "Read: 'Some people believe that gaming makes children aggressive.' This sentence belongs to...", 
+              opts: ["Issue", "Argument For / Against", "Recommendation", "Orientation"], ans: 1, 
+              exp: "Yes! It states an argument (opinion) held by 'some people'.", err: "It presents an opinion or claim, which makes it an Argument." },
+            { type: 'mcq', q: "The word 'However' is typically used to introduce...", 
+              opts: ["A supporting argument", "A contrasting argument (Contra)", "A conclusion", "The main issue"], ans: 1, 
+              exp: "Excellent! 'However' is a contrastive conjunction showing opposite views.", err: "'However' shifts the direction of the text to show the opposite side." },
+            { type: 'mcq', q: "Which thinking verb is commonly found in discussion texts?", 
+              opts: ["Jump", "Believe", "Run", "Eat"], ans: 1, 
+              exp: "Correct! 'Believe' shows someone's opinion or thought process.", err: "Thinking verbs relate to thoughts and opinions, like feel, hope, or believe." },
+            { type: 'mcq', q: "What should be placed in the 'Issue' section?", 
+              opts: ["The writer's final decision", "A preview of the topic to be discussed", "The supporting details only", "A funny story"], ans: 1, 
+              exp: "Right! The Issue introduces the topic before presenting arguments.", err: "The Issue is the introduction where the problem is stated." },
+            { type: 'mcq', q: "If you are writing about 'Uniforms in School', an 'Argument For' would be:", 
+              opts: ["Uniforms are expensive.", "Uniforms remove social class differences.", "Uniforms restrict freedom.", "Uniforms are boring."], ans: 1, 
+              exp: "Yes! Removing social class differences is a positive (Pro) point.", err: "An 'Argument For' supports the issue (in this case, having uniforms)." },
+            { type: 'mcq', q: "If you are writing about 'Uniforms in School', an 'Argument Against' would be:", 
+              opts: ["Uniforms create discipline.", "Uniforms make students neat.", "Uniforms restrict personal expression.", "Uniforms are easy to wash."], ans: 2, 
+              exp: "Correct! Restricting expression is a negative (Contra) point.", err: "An 'Argument Against' states why the idea might be bad." },
+            { type: 'mcq', q: "The final paragraph of a discussion text usually contains...", 
+              opts: ["A summary of the issue and the writer's recommendation", "A sudden plot twist", "More arguments against", "A detailed description"], ans: 0, 
+              exp: "Perfect! The conclusion wraps up and gives a recommendation.", err: "The text must conclude by summarizing and recommending based on the arguments." },
+            
+            // MCMA (11-17) - Multiple Choice Multiple Answer
+            { type: 'mcma', q: "Which of the following are CONTRASTIVE Conjunctions? (Select all that apply)", 
+              opts: ["However", "Furthermore", "On the other hand", "Therefore", "Nevertheless"], ans: [0, 2, 4], 
+              exp: "Brilliant! These words show contrast.", err: "Contrastive conjunctions show opposition (However, On the other hand, Nevertheless)." },
+            { type: 'mcma', q: "Which of these are generic structures of Discussion Text? (Select all)", 
+              opts: ["Issue", "Complication", "Arguments For", "Conclusion", "Description"], ans: [0, 2, 3], 
+              exp: "You nailed the structure!", err: "Complication is Narrative, Description is Descriptive. Focus on Issue, Arguments, Conclusion." },
+            { type: 'mcma', q: "Which sentences are 'Arguments Against' banning plastic bags? (Select all)", 
+              opts: ["Paper bags cut down trees.", "Plastic pollutes oceans.", "Cloth bags are expensive for poor families.", "Plastic bags are convenient to carry wet items."], ans: [0, 2, 3], 
+              exp: "Good analytical thinking!", err: "Look for reasons why banning plastic might be a bad idea (defending plastic)." },
+            { type: 'mcma', q: "Select the words that are 'Thinking Verbs':", 
+              opts: ["Feel", "Write", "Assume", "Understand", "Walk"], ans: [0, 2, 3], 
+              exp: "Correct! These happen in the mind.", err: "Thinking verbs represent mental processes, not physical actions." },
+            { type: 'mcma', q: "Which topics are suitable for a Discussion Text? (Select all)", 
+              opts: ["The benefits and drawbacks of AI", "How I spent my holiday", "Should homework be abolished?", "My cute cat"], ans: [0, 2], 
+              exp: "Yes! Those topics have clear pros and cons.", err: "A discussion topic needs to have two debatable sides." },
+            { type: 'mcma', q: "What are the characteristics of a Conclusion in Discussion text? (Select all)", 
+              opts: ["Provides a final recommendation", "Introduces a completely new issue", "Summarizes the arguments", "Tells a joke"], ans: [0, 2], 
+              exp: "Exactly!", err: "The conclusion should summarize and recommend, never introduce new issues." },
+            { type: 'mcma', q: "Which words represent Modalities used in discussion text? (Select all)", 
+              opts: ["Must", "Apple", "Should", "Could", "Quickly"], ans: [0, 2, 3], 
+              exp: "Good job identifying modalities!", err: "Modalities express necessity or possibility (must, should, could, etc.)." },
+
+            // Categorize (18-25) - Rendered as Dropdown selection per option, but for simplicity here we will ask them to identify if a statement is PRO or CONTRA.
+            { type: 'categorize', q: "Topic: Full-day School. Categorize this statement: 'Students have more time to study and ask teachers directly.'", 
+              opts: ["Argument PRO", "Argument CONTRA"], ans: 0, 
+              exp: "Right! It highlights a benefit.", err: "This is a positive outcome of full-day school, making it a PRO." },
+            { type: 'categorize', q: "Topic: Full-day School. Categorize this statement: 'Students become physically and mentally exhausted by late afternoon.'", 
+              opts: ["Argument PRO", "Argument CONTRA"], ans: 1, 
+              exp: "Correct! Exhaustion is a negative point.", err: "This highlights a negative impact, so it's a CONTRA." },
+            { type: 'categorize', q: "Topic: Banning Junk Food in Canteens. Categorize: 'It forces students to bring healthier home-cooked meals.'", 
+              opts: ["Argument PRO", "Argument CONTRA"], ans: 0, 
+              exp: "Yes! Promoting health is a Pro.", err: "Healthier meals are a positive result of the ban." },
+            { type: 'categorize', q: "Topic: Banning Junk Food in Canteens. Categorize: 'Canteen owners will lose a significant amount of income.'", 
+              opts: ["Argument PRO", "Argument CONTRA"], ans: 1, 
+              exp: "Correct! Losing income is a negative effect.", err: "This shows the negative economic side of the ban (Contra)." },
+            { type: 'categorize', q: "Topic: Online Learning. Categorize: 'It heavily depends on stable internet, which not everyone has.'", 
+              opts: ["Argument PRO", "Argument CONTRA"], ans: 1, 
+              exp: "Spot on! Dependency on internet is a drawback.", err: "This is a weakness or disadvantage (Contra)." },
+            { type: 'categorize', q: "Topic: Online Learning. Categorize: 'It provides flexibility in time and location for studying.'", 
+              opts: ["Argument PRO", "Argument CONTRA"], ans: 0, 
+              exp: "Yes! Flexibility is a strong advantage.", err: "Flexibility is a positive feature (Pro)." },
+            { type: 'categorize', q: "Identify structure: 'Therefore, parents must guide their children when using smartphones.'", 
+              opts: ["Issue", "Conclusion/Recommendation"], ans: 1, 
+              exp: "Correct! 'Therefore' and 'must' strongly suggest a recommendation.", err: "This sentence gives advice based on arguments, which belongs in the Conclusion." },
+            { type: 'categorize', q: "Identify structure: 'Nuclear energy is a controversial topic around the globe.'", 
+              opts: ["Issue", "Conclusion/Recommendation"], ans: 0, 
+              exp: "Perfect! It introduces the topic.", err: "It introduces the topic without giving opinions yet, so it is the Issue." }
+        ];
+
+        // --- STREAMING_CHUNK:Main Application Logic... ---
+        const appLogic = {
+            user: { name: '', class: '', score: 0 },
+            currentScreen: 'screenLogin',
+            
+            // Quiz State
+            currentQIndex: 0,
+            quizScore: 0,
+            selectedOpts: [], // For MCMA
+            difficultyMultiplier: 1, // Based on class
+            
+            showScreen(id) {
+                AudioSys.play('click');
+                document.querySelectorAll('#appContainer > div').forEach(el => el.classList.add('hidden'));
+                document.getElementById(id).classList.remove('hidden');
+                this.currentScreen = id;
+            },
+
+            login() {
+                const name = document.getElementById('inputName').value.trim();
+                const cls = document.getElementById('selectClass').value;
+                if(!name || !cls) {
+                    this.showModal('Oops!', 'Please enter your name and select your class.', 'warning');
+                    return;
+                }
+                
+                this.user.name = name;
+                this.user.class = cls;
+                
+                // Adjust difficulty based on class (Conceptual implementation as requested)
+                this.difficultyMultiplier = cls === 'XII-12' ? 1.5 : 1.0; 
+
+                document.getElementById('displayUserName').innerText = name;
+                document.getElementById('displayUserClass').innerText = cls;
+                
+                this.showScreen('screenMenu');
+                
+                // Greeting TTS
+                AudioSys.speak(`Welcome to Advanced English Explorer, ${name}!`);
+            },
+
+            logout() {
+                this.user = { name: '', class: '', score: 0 };
+                document.getElementById('inputName').value = '';
+                document.getElementById('selectClass').value = '';
+                this.showScreen('screenLogin');
+            },
+
+            // --- Custom Modal (Alert Replacement) ---
+            showModal(title, msg, type='info', extraMsg='') {
+                const modal = document.getElementById('customModal');
+                document.getElementById('modalTitle').innerText = title;
+                document.getElementById('modalMessage').innerText = msg;
+                
+                const icon = document.getElementById('modalIcon');
+                const extra = document.getElementById('modalExtra');
+                
+                if(type === 'success') {
+                    icon.innerHTML = '<i class="fas fa-check-circle text-green-500"></i>';
+                    document.getElementById('modalBtn').className = "bg-green-500 text-white font-bold py-3 px-8 rounded-xl btn-game border-b-4 border-green-700 w-full text-lg mt-4";
+                    AudioSys.play('correct');
+                } else if(type === 'error') {
+                    icon.innerHTML = '<i class="fas fa-times-circle text-red-500"></i>';
+                    document.getElementById('modalBtn').className = "bg-red-500 text-white font-bold py-3 px-8 rounded-xl btn-game border-b-4 border-red-700 w-full text-lg mt-4";
+                    AudioSys.play('wrong');
+                } else {
+                    icon.innerHTML = '<i class="fas fa-info-circle text-blue-500"></i>';
+                    document.getElementById('modalBtn').className = "bg-blue-500 text-white font-bold py-3 px-8 rounded-xl btn-game border-b-4 border-blue-700 w-full text-lg mt-4";
+                }
+
+                if(extraMsg) {
+                    extra.innerHTML = `<strong>Educative Note:</strong><br/>${extraMsg}`;
+                    extra.classList.remove('hidden');
+                } else {
+                    extra.classList.add('hidden');
+                }
+
+                // TTS for modal feedback based on Growth Mindset principles
+                if(AudioSys.on) {
+                    // Slight delay to ensure SFX plays first
+                    setTimeout(() => { AudioSys.speak(msg + ". " + extraMsg.replace(/(<([^>]+)>)/gi, "")); }, 500);
+                }
+
+                modal.classList.remove('hidden');
+                
+                // Store resolve function to wait for click
+                return new Promise(resolve => {
+                    this.modalResolve = resolve;
+                });
+            },
+
+            closeModal() {
+                AudioSys.play('click');
+                document.getElementById('customModal').classList.add('hidden');
+                window.speechSynthesis.cancel();
+                if(this.modalResolve) this.modalResolve();
+            },
+
+            // --- Minigames ---
+            checkScramble() {
+                const val = document.getElementById('scrambleInput').value.toUpperCase();
+                const fb = document.getElementById('scrambleFeedback');
+                fb.classList.remove('hidden');
+                if(val === 'STRUCTURE') {
+                    fb.innerText = "Excellent! You got it!";
+                    fb.className = "mt-4 text-xl font-bold text-green-500";
+                    AudioSys.play('correct');
+                } else {
+                    fb.innerText = "Not quite! Try again.";
+                    fb.className = "mt-4 text-xl font-bold text-red-500";
+                    AudioSys.play('wrong');
+                }
+            },
+            
+            checkSim(isCorrect) {
+                if(isCorrect) {
+                    this.showModal("Spot On!", "Yes, pointing out negative impacts like 'addiction' is an Argument CONTRA.", "success");
+                } else {
+                    this.showModal("Keep Trying!", "Read carefully. It says 'critics argue' and 'reduces interaction'. Is this supporting or opposing?", "error");
+                }
+            },
+
+            // --- STREAMING_CHUNK:Quiz Engine Logic... ---
+            startQuiz() {
+                this.currentQIndex = 0;
+                this.quizScore = 0;
+                document.getElementById('quizScore').innerText = this.quizScore;
+                this.showScreen('screenQuiz');
+                this.loadQuestion();
+            },
+
+            quitQuiz() {
+                if(confirm("Are you sure you want to quit the exam? Your progress will be lost.")) {
+                    this.showScreen('screenMenu');
+                }
+            },
+
+            readQuestionText() {
+                const q = quizData[this.currentQIndex].q;
+                AudioSys.speak(q);
+            },
+
+            loadQuestion() {
+                const qData = quizData[this.currentQIndex];
+                document.getElementById('qCurrent').innerText = this.currentQIndex + 1;
+                document.getElementById('quizProgress').style.width = `${((this.currentQIndex) / quizData.length) * 100}%`;
+                
+                document.getElementById('qText').innerText = qData.q;
+                const optsContainer = document.getElementById('qOptions');
+                optsContainer.innerHTML = '';
+                this.selectedOpts = [];
+                
+                const btnSubmit = document.getElementById('btnSubmitMulti');
+
+                // Update Badge
+                const badge = document.getElementById('qTypeBadge');
+                if(qData.type === 'mcq') {
+                    badge.innerText = "Single Choice"; badge.className = "mb-4 text-sm font-bold text-blue-600 bg-blue-100 inline-block px-3 py-1 rounded-full";
+                    btnSubmit.classList.add('hidden');
+                } else if(qData.type === 'mcma') {
+                    badge.innerText = "Multiple Answers (Select all correct)"; badge.className = "mb-4 text-sm font-bold text-purple-600 bg-purple-100 inline-block px-3 py-1 rounded-full";
+                    btnSubmit.classList.remove('hidden');
+                } else {
+                    badge.innerText = "Categorization"; badge.className = "mb-4 text-sm font-bold text-orange-600 bg-orange-100 inline-block px-3 py-1 rounded-full";
+                    btnSubmit.classList.add('hidden');
+                }
+
+                // Render Options
+                qData.opts.forEach((optText, index) => {
+                    if (qData.type === 'mcq' || qData.type === 'categorize') {
+                        // Single click button
+                        const btn = document.createElement('button');
+                        btn.className = "w-full text-left bg-gray-50 border-2 border-gray-200 p-4 rounded-xl hover:border-blue-400 hover:bg-blue-50 text-lg transition-all shadow-sm";
+                        btn.innerText = optText;
+                        btn.onclick = () => this.handleAnswer(index);
+                        optsContainer.appendChild(btn);
+                    } else if (qData.type === 'mcma') {
+                        // Checkbox style
+                        const label = document.createElement('label');
+                        label.className = "custom-checkbox cursor-pointer relative block";
+                        label.innerHTML = `
+                            <input type="checkbox" class="peer sr-only" value="${index}" onchange="appLogic.toggleMcma(${index}, this.checked)">
+                            <div class="w-full text-left bg-gray-50 border-2 border-gray-200 p-4 rounded-xl peer-hover:border-purple-400 peer-focus:ring transition-all shadow-sm flex items-center">
+                                <div class="w-6 h-6 border-2 border-gray-400 rounded mr-4 flex items-center justify-center peer-checked:bg-white">
+                                    <i class="fas fa-check text-white opacity-0 transition-opacity"></i>
+                                </div>
+                                <span class="text-lg flex-grow">${optText}</span>
+                            </div>
+                        `;
+                        // add CSS dynamically for checkmark visibility based on peer-checked in native tailwind requires more config, so handling via JS classes is easier, but using structural CSS is cleaner.
+                        // We will just let the custom CSS defined in <style> handle the background color change.
+                        optsContainer.appendChild(label);
+                    }
+                });
+
+                if(AudioSys.on) this.readQuestionText();
+            },
+
+            toggleMcma(index, isChecked) {
+                AudioSys.play('click');
+                if(isChecked) {
+                    if(!this.selectedOpts.includes(index)) this.selectedOpts.push(index);
+                } else {
+                    this.selectedOpts = this.selectedOpts.filter(i => i !== index);
+                }
+            },
+
+            async submitMultiAnswer() {
+                if(this.selectedOpts.length === 0) {
+                    this.showModal("Select an answer", "Please select at least one option.", "info");
+                    return;
+                }
+                const qData = quizData[this.currentQIndex];
+                // Check if arrays contain same elements
+                const isCorrect = this.selectedOpts.length === qData.ans.length && 
+                                  this.selectedOpts.every(val => qData.ans.includes(val));
+                
+                await this.processResult(isCorrect, qData);
+            },
+
+            async handleAnswer(selectedIndex) {
+                const qData = quizData[this.currentQIndex];
+                const isCorrect = selectedIndex === qData.ans;
+                await this.processResult(isCorrect, qData);
+            },
+
+            // --- STREAMING_CHUNK:Scoring & Feedback Logic... ---
+            async processResult(isCorrect, qData) {
+                let title, msg, type;
+
+                // Growth mindset feedback formatting
+                if(isCorrect) {
+                    title = ["Awesome!", "Great Job!", "Spot On!", "Brilliant!"][Math.floor(Math.random()*4)];
+                    msg = "You got it right. Keep up the great work!";
+                    type = 'success';
+                    this.quizScore += (4 * this.difficultyMultiplier); // 4 pts per question = 100 max (adjusted by multiplier conceptually)
+                } else {
+                    title = ["Not Quite Yet!", "Almost There!", "Let's Review!", "Good Try!"][Math.floor(Math.random()*4)];
+                    msg = "That wasn't the correct answer, but mistakes help us learn.";
+                    type = 'error';
+                }
+
+                document.getElementById('quizScore').innerText = Math.round(this.quizScore);
+                
+                // Show modal and await user click
+                await this.showModal(title, msg, type, isCorrect ? qData.exp : qData.err + " " + qData.exp);
+
+                this.currentQIndex++;
+                if(this.currentQIndex < quizData.length) {
+                    this.loadQuestion();
+                } else {
+                    this.finishQuiz();
+                }
+            },
+
+            async finishQuiz() {
+                AudioSys.play('fanfare');
+                document.getElementById('quizProgress').style.width = `100%`;
+                let finalScore = Math.min(Math.round(this.quizScore), 100); // Cap at 100
+                
+                let feedbackMsg = `You completed the exam with a score of ${finalScore}/100. `;
+                if(finalScore > 80) feedbackMsg += "Outstanding performance! You've mastered Discussion Texts.";
+                else if(finalScore > 60) feedbackMsg += "Good job! A little more review and you'll be perfect.";
+                else feedbackMsg += "Keep practicing! Review the materials and try again. You can do this!";
+
+                // Save to Firebase
+                if(window.saveScoreToCloud) {
+                    await window.saveScoreToCloud(this.user.name, this.user.class, finalScore);
+                }
+
+                await this.showModal("Exam Finished!", feedbackMsg, 'success', "Your score has been saved to the Teacher Dashboard.");
+                this.showScreen('screenMenu');
+            },
+
+            // --- STREAMING_CHUNK:Dashboard & Export Logic... ---
+            exportData(type) {
+                const data = window.getDashboardData ? window.getDashboardData() : [];
+                if(data.length === 0) {
+                    this.showModal("Empty", "No data to export.", "info");
+                    return;
+                }
+
+                // Prepare standard array for exports
+                const exportArr = data.map((item, index) => ({
+                    No: index + 1,
+                    Name: item.name,
+                    Class: item.class,
+                    Score: item.score,
+                    Date: item.timestamp ? new Date(item.timestamp.toMillis()).toLocaleString() : new Date().toLocaleString()
+                }));
+
+                if (type === 'excel') {
+                    const ws = XLSX.utils.json_to_sheet(exportArr);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Scores");
+                    XLSX.writeFile(wb, "Student_Scores.xlsx");
+                } 
+                else if (type === 'pdf') {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    doc.text("Student Scores - Discussion Text", 14, 15);
+                    
+                    const tableColumn = ["No", "Name", "Class", "Score", "Date"];
+                    const tableRows = exportArr.map(row => Object.values(row));
+
+                    doc.autoTable({
+                        head: [tableColumn],
+                        body: tableRows,
+                        startY: 20,
+                    });
+                    doc.save("Student_Scores.pdf");
+                }
+                else if (type === 'word') {
+                    // Simple HTML to Word blob approach
+                    let tableHTML = `<table border="1" style="border-collapse:collapse; width:100%;"><tr><th>No</th><th>Name</th><th>Class</th><th>Score</th><th>Date</th></tr>`;
+                    exportArr.forEach(row => {
+                        tableHTML += `<tr><td>${row.No}</td><td>${row.Name}</td><td>${row.Class}</td><td>${row.Score}</td><td>${row.Date}</td></tr>`;
+                    });
+                    tableHTML += `</table>`;
+                    
+                    const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export HTML To Doc</title></head><body>";
+                    const footer = "</body></html>";
+                    const sourceHTML = header + "<h2>Student Scores</h2>" + tableHTML + footer;
+                    
+                    const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+                    const fileDownload = document.createElement("a");
+                    document.body.appendChild(fileDownload);
+                    fileDownload.href = source;
+                    fileDownload.download = 'Student_Scores.doc';
+                    fileDownload.click();
+                    document.body.removeChild(fileDownload);
+                }
+            }
+        };
+
+        // Render Dashboard Table Function (called from Firebase script)
+        function renderDashboard(data) {
+            const tbody = document.getElementById('dashboardTableBody');
+            tbody.innerHTML = '';
+            if(data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-500">No scores recorded yet.</td></tr>';
+                return;
+            }
+            
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition-colors";
+                const dateStr = item.timestamp ? new Date(item.timestamp.toMillis()).toLocaleString() : "Just now";
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-4 border-b font-medium">${item.name}</td>
+                    <td class="py-3 px-4 border-b">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">${item.class}</span>
+                    </td>
+                    <td class="py-3 px-4 border-b">
+                        <span class="${item.score >= 70 ? 'text-green-600' : 'text-red-600'} font-bold">${item.score}</span>
+                    </td>
+                    <td class="py-3 px-4 border-b text-sm text-gray-500">${dateStr}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
